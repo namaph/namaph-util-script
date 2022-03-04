@@ -1,6 +1,6 @@
 import { PublicKey, Keypair } from '@solana/web3.js';
 import * as anchor from '@project-serum/anchor';
-import { Idl, Program } from '@project-serum/anchor';
+import { Idl, Program, web3 } from '@project-serum/anchor';
 import BN from 'bn.js';
 import {
 	IPrograms,
@@ -8,6 +8,7 @@ import {
 	IUpdateTopologyData,
 	IMultisigTransaction
 } from './model';
+import { namaphProgram, multisigProgram } from './constants';
 
 export const init = async (
 	username: string,
@@ -18,16 +19,15 @@ export const init = async (
 	programs: IPrograms) => {
 
 	const [signer, nonce] = await PublicKey.findProgramAddress(
-		[multisigKeyPair.publicKey.toBytes()],
-		programs.multisig.programId);
+		[multisigKeyPair.publicKey.toBytes()], multisigProgram);
 
 	const [topology] = await PublicKey.findProgramAddress(
 		[Buffer.from('topology'), Buffer.from(mapName.slice(0, 32))],
-		programs.namaph.programId);
+		namaphProgram);
 
 	const [membership] = await PublicKey.findProgramAddress(
 		[Buffer.from('membership'), payer.toBytes()],
-		programs.namaph.programId);
+		namaphProgram);
 
 	await programs.namaph.rpc.initialize(username, mapName, capacity, nonce, {
 		accounts: {
@@ -35,7 +35,7 @@ export const init = async (
 			multisig: multisigKeyPair.publicKey,
 			payer,
 			membership,
-			multisigProgram: programs.multisig.programId,
+			multisigProgram: multisigProgram,
 			systemProgram: anchor.web3.SystemProgram.programId
 		},
 		instructions: [
@@ -103,7 +103,7 @@ export const updateTopology = async (
 			membership: proposer,
 			multisig: multisig,
 			transaction: transaction.publicKey,
-			multisigProgram: programs.multisig.programId,
+			multisigProgram,
 			systemProgram: anchor.web3.SystemProgram.programId
 		},
 		signers: [transaction],
@@ -128,58 +128,75 @@ export const addMember = async (
 	mTx: IMultisigTransaction
 ) => {
 
-	const { programs } = mTx;
+	const { programs, multisig, proposer } = mTx;
 	const transaction = Keypair.generate();
-
-	const multisigData = await programs.multisig.account.multisig.fetch(mTx.multisig);
+	const multisigData = await programs.multisig.account.multisig.fetch(multisig);
 	let [newMembership] = await PublicKey.findProgramAddress([Buffer.from('membership'), newUser.toBytes()], programs.namaph.programId);
 
 	let owners = multisigData.owners;
-
 	owners.push(newMembership);
 
-
 	const accounts = programs.multisig.instruction.setOwners.accounts({
-		multisig: mTx.multisig,
+		multisig,
 		multisigSigner: signer
-	});
+	}) as ITransactionAccount[];
 
-	const data = programs.multisig.coder.instruction.encode('set_owners', {
-		owners
-	});
+	const data = programs.multisig.coder.instruction.encode('set_owners', { owners });
 
 	await programs.namaph.rpc.
 		addMembershipAndCreateTransaction(
 			username,
 			newUser,
-			programs.multisig.programId,
+			multisigProgram,
 			accounts,
-			data, {
-			accounts: {
-				proposer: mTx.proposer,
-				wallet: programs.namaph.provider.wallet.publicKey,
-				multisig: mTx.multisig,
-				transaction: transaction.publicKey,
-				multisigProgram: programs.multisig.programId,
-				membership: newMembership,
-				systemProgram: anchor.web3.SystemProgram.programId
-			},
-			signers: [transaction],
-			instructions: [
-				await programs.multisig.account.transaction.createInstruction(
-					transaction,
-					1000
-				)
-			]
-		});
+			data,
+			{
+				accounts: {
+					proposer: proposer,
+					wallet: programs.namaph.provider.wallet.publicKey,
+					multisig,
+					transaction: transaction.publicKey,
+					multisigProgram,
+					membership: newMembership,
+					systemProgram: web3.SystemProgram.programId
+				},
+				signers: [transaction],
+				instructions: [
+					await programs.multisig.account.transaction.createInstruction(
+						transaction,
+						1000
+					)
+				]
+			});
 
-	return { newMembership, transaction }
+
+	return { newMembership, accounts, transaction }
+}
+
+export const approve = async (
+	programs: IPrograms,
+	multisig: PublicKey,
+	transaction: PublicKey,
+	membership: PublicKey,
+	wallet = programs.namaph.provider.wallet.publicKey,
+	signers = []
+) => {
+
+	await programs.namaph.rpc.approve({
+			accounts: {
+				multisig,
+				transaction,
+				wallet,
+				membership,
+				multisigProgram,
+			},
+			signers
+	});
 }
 
 export const removeMember = async (
 	remover: PublicKey,
-	user: PublicKey, // the 'wallet' user for remover
-	wallet: PublicKey,
+	user: PublicKey,
 	signer: PublicKey,
 	mTx: IMultisigTransaction
 ) => {
@@ -193,7 +210,9 @@ export const removeMember = async (
 	);
 
 	if (owners.length !== pastOwners.length) {
-		throw ('no membership publickey to remove');
+		// throw ('no membership publickey to remove');
+		console.error('no membership publickey to remove');
+		return
 	}
 
 	const transaction = Keypair.generate();
@@ -211,11 +230,11 @@ export const removeMember = async (
 		programs.multisig.programId, accounts, data, {
 		accounts: {
 			proposer,
-			// 
-			wallet,
+			// this should be the wallet 
+			wallet: programs.namaph.provider.wallet.publicKey,
 			multisig,
 			transaction: transaction.publicKey,
-			multisigProgram: programs.multisig.programId,
+			multisigProgram,
 			membership: remover,
 			user,
 			systemProgram: anchor.web3.SystemProgram.programId
@@ -229,13 +248,12 @@ export const removeMember = async (
 		]
 	});
 
-	return { transaction }
+	return { transaction, accounts }
 };
 
 export const createTreasury = async (
 	name: string,
 	multisig: PublicKey,
-	payer: PublicKey,
 	signer: PublicKey,
 	namaphProgram: Program<Idl>) => {
 
@@ -246,16 +264,16 @@ export const createTreasury = async (
 	await namaphProgram.rpc.createTreasury(name, signer, {
 		accounts: {
 			treasury,
-			payer,
+			payer: namaphProgram.provider.wallet.publicKey,
 			multisig,
 			systemProgram: anchor.web3.SystemProgram.programId
 		},
 	});
 
-	return { treasury }
+	return treasury
 };
 
-export const spendTx = async (
+export const spend = async (
 	treasury: PublicKey,
 	to: PublicKey,
 	amount: BN,
@@ -277,12 +295,12 @@ export const spendTx = async (
 		to
 	}) as ITransactionAccount[];
 
-	await programs.namaph.rpc.createTransaction(programs.namaph, accounts, data, {
+	await programs.namaph.rpc.createTransaction(programs.namaph.programId, accounts, data, {
 		accounts: {
 			membership: proposer,
 			multisig,
 			transaction: transaction.publicKey,
-			multisigProgram: programs.multisig.programId,
+			multisigProgram,
 			systemProgram: anchor.web3.SystemProgram.programId
 		},
 		signers: [transaction],
@@ -323,7 +341,7 @@ export const changeThreshold = async (
 			membership: proposer,
 			multisig,
 			transaction: transaction.publicKey,
-			multisigProgram: programs.multisig.programId,
+			multisigProgram,
 			systemProgram: anchor.web3.SystemProgram.programId,
 		},
 		signers: [transaction],

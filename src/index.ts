@@ -1,9 +1,9 @@
 import keypairJson from './test_id.json';
 import { setup } from './setup';
 import { fetchMembership, fetchMultisig, fetchTopology, ITopology } from './fetch';
-import { addMember, execute, init, updateTopology } from './rpc';
+import { addMember, changeThreshold, execute, init, createTreasury, updateTopology, spend, approve } from './rpc';
 import { PublicKey, Keypair } from '@solana/web3.js';
-import { web3 } from '@project-serum/anchor';
+import { BN, web3 } from '@project-serum/anchor';
 
 // basically we should hold the public key when we want to 
 // point to an account (ex: 'topology')
@@ -50,59 +50,98 @@ const main = async () => {
 	const newUser = Keypair.generate();
 	const username = 'newuser';
 
-	// let { newMembership, transaction }  = await addMember(
-	// 	newUser.publicKey, 
-	// 	'newusername', 
-	// 	signer, 
-	// 	mTx
-	// );
+	console.log('addmember');
+	let { newMembership, transaction, accounts } = await addMember(
+		newUser.publicKey,
+		username,
+		signer,
+		mTx
+	);
 
-	const transaction = Keypair.generate();
-
-	const multisigData = await programs.multisig.account.multisig.fetch(multisig);
-	let [newMembership] = await PublicKey.findProgramAddress([Buffer.from('membership'), newUser.publicKey.toBytes()], programs.namaph.programId);
-
-	let owners = multisigData.owners;
-
-	owners.push(newMembership);
-
-	const accounts = programs.multisig.instruction.setOwners.accounts({
+	await execute(
+		accounts,
 		multisig,
-		multisigSigner: signer
-	});
+		signer,
+		transaction.publicKey,
+		programs.multisig.programId,
+		programs.multisig
+	);
 
-	const data = programs.multisig.coder.instruction.encode('set_owners', {
-		owners
-	});
+	console.log('update topology');
+	({ transaction, accounts } = await updateTopology(
+		topology,
+		{ id: 2, value: 1 },
+		signer,
+		mTx
+	));
 
-	await programs.namaph.rpc.
-		addMembershipAndCreateTransaction(
-			username,
-			newUser.publicKey,
-			programs.multisig.programId,
-			accounts,
-			data,
-			{
-				accounts: {
-					proposer: mTx.proposer,
-					wallet: programs.namaph.provider.wallet.publicKey,
-					multisig,
-					transaction: transaction.publicKey,
-					multisigProgram: programs.multisig.programId,
-					membership: newMembership,
-					systemProgram: web3.SystemProgram.programId
-				},
-				signers: [transaction],
-				instructions: [
-					await programs.multisig.account.transaction.createInstruction(
-						transaction,
-						1000
-					)
-				]
-			});
+	await execute(
+		accounts,
+		multisig,
+		signer,
+		transaction.publicKey,
+		programs.namaph.programId,
+		programs.multisig
+	);
+
+	console.log('change threshold');
+	({ transaction, accounts } = await changeThreshold(new BN(2), signer, mTx));
+
+	await execute(
+		accounts,
+		multisig,
+		signer,
+		transaction.publicKey,
+		programs.multisig.programId,
+		programs.multisig
+	);
+
+	console.log('change threshold (again)');
+	({ transaction, accounts } = await changeThreshold(new BN(1), signer, mTx));
+
+	await approve(programs, multisig, transaction.publicKey, newMembership, newUser.publicKey, [newUser])
+
+	await execute(
+		accounts,
+		multisig,
+		signer,
+		transaction.publicKey,
+		programs.multisig.programId,
+		programs.multisig
+	);
 
 
-	console.log(newMembership, transaction);
+	const treasury = await createTreasury(
+		'default',
+		multisig,
+		signer,
+		programs.namaph);
+
+	// send some SOL
+	let tx = new web3.Transaction().add(
+		web3.SystemProgram.transfer({
+			fromPubkey: programs.namaph.provider.wallet.publicKey,
+			toPubkey: treasury,
+			lamports: 1e9 * 10
+		})
+	);
+
+	tx.feePayer = programs.namaph.provider.wallet.publicKey;
+
+	await programs.namaph.provider.send(tx);
+
+	console.log('spend');
+	({ transaction, accounts } = await spend(treasury, programs.namaph.provider.wallet.publicKey, new BN(1e9 * 5), signer, mTx));
+
+	await execute(
+		accounts,
+		multisig,
+		signer,
+		transaction.publicKey,
+		programs.namaph.programId,
+		programs.multisig
+	);
+
 }
 
 main();
