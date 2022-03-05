@@ -218,6 +218,11 @@
           "isSigner": false
         },
         {
+          "name": "wallet",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
           "name": "multisig",
           "isMut": false,
           "isSigner": false
@@ -358,6 +363,10 @@
         "fields": [
           {
             "name": "wallet",
+            "type": "publicKey"
+          },
+          {
+            "name": "multisig",
             "type": "publicKey"
           },
           {

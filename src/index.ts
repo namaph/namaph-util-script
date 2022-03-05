@@ -12,7 +12,7 @@ import { BN, web3 } from '@project-serum/anchor';
 
 const main = async () => {
 
-	const mapName = 'map';
+	const mapName = 'namaph-test';
 
 	const { user, programs } = setup(keypairJson);
 
@@ -30,7 +30,7 @@ const main = async () => {
 		console.log('we need to init!');
 		const multisigKeypair = Keypair.generate();
 		// we need to init.
-		const initResult = await init('username', mapName, 10, multisigKeypair, user.publicKey, programs);
+		const initResult = await init('yasushisakai', mapName, 21, multisigKeypair, user.publicKey, programs);
 		topology = initResult.topology;
 		membership = initResult.membership;
 		multisig = multisigKeypair.publicKey;
@@ -40,6 +40,8 @@ const main = async () => {
 		[multisig.toBytes()],
 		programs.multisig.programId
 	);
+
+	console.log(signer.toBase58());
 
 	const mTx = {
 		proposer: membership,
@@ -97,6 +99,13 @@ const main = async () => {
 	);
 
 	console.log('change threshold (again)');
+	// the other owner proposes
+	//const newMtx = {
+	//	proposer: newMembership,
+	//	multisig,
+	//	programs
+	//};
+
 	({ transaction, accounts } = await changeThreshold(new BN(1), signer, mTx));
 
 	await approve(programs, multisig, transaction.publicKey, newMembership, newUser.publicKey, [newUser])
@@ -110,9 +119,8 @@ const main = async () => {
 		programs.multisig
 	);
 
-
 	const treasury = await createTreasury(
-		'default',
+		'megei',
 		multisig,
 		signer,
 		programs.namaph);
@@ -141,7 +149,6 @@ const main = async () => {
 		programs.namaph.programId,
 		programs.multisig
 	);
-
 }
 
 main();

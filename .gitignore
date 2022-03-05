@@ -42,3 +42,4 @@ yarn.lock
 
 # secret 
 src/test_id.json
+src/namaph_test_id.json

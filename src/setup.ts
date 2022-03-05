@@ -4,7 +4,6 @@ import nIdl from './idl/namaph_multisig.json';
 import mIdl from './idl/serum_multisig.json';
 
 // const url = 'https://api.devnet.solana.com';
-
 const url = 'http://127.0.0.1:8899';
 
 export const setup = (keypairJson: number[]) => {
