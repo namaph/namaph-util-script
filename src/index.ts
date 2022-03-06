@@ -1,7 +1,7 @@
 import keypairJson from './test_id.json';
 import { setup } from './setup';
 import { fetchMembership, fetchMultisig, fetchTopology, ITopology } from './fetch';
-import { addMember, changeThreshold, execute, init, createTreasury, updateTopology, spend, approve } from './rpc';
+import { addMember, changeThreshold, execute, init, createTreasury, updateTopology, spend, approve, addTextTopic, addUrlTopic } from './rpc';
 import { PublicKey, Keypair } from '@solana/web3.js';
 import { BN, web3 } from '@project-serum/anchor';
 
@@ -53,6 +53,7 @@ const main = async () => {
 	const username = 'newuser';
 
 	console.log('addmember');
+
 	let { newMembership, transaction, accounts } = await addMember(
 		newUser.publicKey,
 		username,
@@ -66,6 +67,44 @@ const main = async () => {
 		signer,
 		transaction.publicKey,
 		programs.multisig.programId,
+		programs.multisig
+	);
+
+	console.log('add text topic');
+
+	let textTopicResult = await addTextTopic(
+		'text topic', 
+		'body of text topic', 
+		signer, 
+		mTx);
+
+	({transaction, accounts} = textTopicResult)
+
+	await execute(
+		accounts,
+		multisig,
+		signer,
+		transaction.publicKey,
+		programs.namaph.programId,
+		programs.multisig
+	);
+
+	console.log('add url topic');
+
+	let urlTopicResult = await addUrlTopic(
+		'url topic', 
+		'https://namaph.dev', 
+		signer, 
+		mTx);
+
+	({transaction, accounts} = urlTopicResult)
+
+	await execute(
+		accounts,
+		multisig,
+		signer,
+		transaction.publicKey,
+		programs.namaph.programId,
 		programs.multisig
 	);
 

@@ -87,10 +87,10 @@ export const updateTopology = async (
 	let signers = [transaction];
 	const { proposer, multisig, programs } = mTx;
 	let user = programs.namaph.provider.wallet.publicKey;
-	if(userKp) {
+	if (userKp) {
 		user = userKp.publicKey;
 		signers.push(userKp);
-	} 
+	}
 
 
 	const data = mTx.programs.namaph.coder.instruction.encode(
@@ -126,6 +126,112 @@ export const updateTopology = async (
 	return { transaction, accounts }
 }
 
+export const addTextTopic = async (
+	topicTitle: string,
+	body: string,
+	signer: PublicKey,
+	mTx: IMultisigTransaction
+) => {
+
+	const { programs, multisig, proposer } = mTx;
+	const [textTopic] = await PublicKey.findProgramAddress([
+		Buffer.from("text"),
+		multisig.toBytes(),
+		Buffer.from(topicTitle.slice(0, 32))
+	], programs.namaph.programId);
+
+	const transaction = Keypair.generate();
+
+	const data = programs.namaph.coder.instruction.encode("update_text_topic", {
+		title: topicTitle,
+		body
+	})
+
+	const accounts = programs.namaph.instruction.updateTextTopic.accounts({
+		textTopic,
+		authority: signer,
+	}) as ITransactionAccount[];
+
+
+	await programs.namaph.rpc.createTextTopic(
+		topicTitle,
+		signer,
+		programs.namaph.programId,
+		accounts,
+		data,
+		{
+			accounts: {
+				topic: textTopic,
+				multisig,
+				systemProgram: web3.SystemProgram.programId,
+				proposer,
+				wallet: programs.namaph.provider.wallet.publicKey,
+				transaction: transaction.publicKey,
+				multisigProgram,
+			},
+			signers: [transaction],
+			instructions: [
+				await programs.multisig.account.transaction.createInstruction(transaction, 2000)
+			]
+		});
+
+	return {textTopic, transaction, accounts}
+}
+
+export const addUrlTopic = async (
+	topicTitle: string,
+	url: string,
+	signer: PublicKey,
+	mTx: IMultisigTransaction
+) => {
+
+	const { proposer, multisig, programs } = mTx;
+
+	const [urlTopic] = await PublicKey.findProgramAddress([
+		Buffer.from("url"),
+		multisig.toBytes(),
+		Buffer.from(topicTitle.slice(0, 32))
+	], programs.namaph.programId);
+
+	const transaction = Keypair.generate();
+
+	const data = programs.namaph.coder.instruction.encode("update_url_topic", {
+		title: topicTitle,
+		url
+	})
+
+	const accounts = programs.namaph.instruction.updateUrlTopic.accounts({
+		urlTopic,
+		authority: signer,
+	}) as ITransactionAccount[];
+
+
+	await programs.namaph.rpc.createUrlTopic(
+		topicTitle,
+		signer,
+		programs.namaph.programId,
+		accounts,
+		data,
+		{
+			accounts: {
+				urlTopic,
+				multisig,
+				systemProgram: web3.SystemProgram.programId,
+				proposer,
+				wallet: programs.namaph.provider.wallet.publicKey,
+				transaction: transaction.publicKey,
+				multisigProgram,
+			},
+			signers: [transaction],
+			instructions: [
+				await programs.multisig.account.transaction.createInstruction(transaction, 2000)
+			]
+		});
+
+	return {urlTopic, transaction, accounts}
+}
+
+
 export const addMember = async (
 	newUser: PublicKey,
 	username: String,
@@ -140,7 +246,7 @@ export const addMember = async (
 	const transaction = Keypair.generate();
 	const multisigData = await programs.multisig.account.multisig.fetch(multisig);
 	let [newMembership] = await PublicKey.findProgramAddress(
-		[Buffer.from('membership'), multisig.toBytes(), newUser.toBytes()], 
+		[Buffer.from('membership'), multisig.toBytes(), newUser.toBytes()],
 		programs.namaph.programId);
 
 	let owners = multisigData.owners;
@@ -294,10 +400,10 @@ export const spend = async (
 
 	const transaction = Keypair.generate();
 	const { proposer, multisig, programs } = mTx;
-	
+
 	const signers = [transaction];
 	let user = programs.namaph.provider.wallet.publicKey;
-	if(userPk){
+	if (userPk) {
 		user = userPk.publicKey;
 		signers.push(userPk);
 	}

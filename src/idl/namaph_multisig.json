@@ -353,6 +353,188 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "createUrlTopic",
+      "accounts": [
+        {
+          "name": "urlTopic",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "multisig",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "proposer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "wallet",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "transaction",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "multisigProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "authority",
+          "type": "publicKey"
+        },
+        {
+          "name": "pid",
+          "type": "publicKey"
+        },
+        {
+          "name": "accs",
+          "type": {
+            "vec": {
+              "defined": "TransactionAccountCpi"
+            }
+          }
+        },
+        {
+          "name": "data",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "updateUrlTopic",
+      "accounts": [
+        {
+          "name": "urlTopic",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "url",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "createTextTopic",
+      "accounts": [
+        {
+          "name": "topic",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "multisig",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "proposer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "wallet",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "transaction",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "multisigProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "authority",
+          "type": "publicKey"
+        },
+        {
+          "name": "pid",
+          "type": "publicKey"
+        },
+        {
+          "name": "accs",
+          "type": {
+            "vec": {
+              "defined": "TransactionAccountCpi"
+            }
+          }
+        },
+        {
+          "name": "data",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "updateTextTopic",
+      "accounts": [
+        {
+          "name": "textTopic",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "body",
+          "type": "string"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -372,6 +554,34 @@
           {
             "name": "username",
             "type": "string"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TextTopic",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "multisig",
+            "type": "publicKey"
+          },
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "type": "string"
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
           },
           {
             "name": "bump",
@@ -428,6 +638,34 @@
           {
             "name": "name",
             "type": "string"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UrlTopic",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "multisig",
+            "type": "publicKey"
+          },
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "url",
+            "type": "string"
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
           },
           {
             "name": "bump",
