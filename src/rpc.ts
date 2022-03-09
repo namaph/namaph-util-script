@@ -99,10 +99,15 @@ export const updateTopology = async (
 
 	const accounts = mTx.programs.namaph.instruction.updateTopology.accounts({
 		topology,
+		proposer,
 		authority: signer
 	}) as ITransactionAccount[]
 
 	const transactionSize = 1000;
+
+	const [transactionMeta] = await PublicKey.findProgramAddress([
+		Buffer.from('transaction_meta').slice(0,32), transaction.publicKey.toBytes(),
+	],programs.namaph.programId);
 
 	await mTx.programs.namaph.rpc.createTransaction(
 		mTx.programs.namaph.programId, accounts, data, {
@@ -111,6 +116,7 @@ export const updateTopology = async (
 			multisig,
 			wallet: user, // this needs to be tied to the membership
 			transaction: transaction.publicKey,
+			transactionMeta,
 			multisigProgram,
 			systemProgram: anchor.web3.SystemProgram.programId
 		},
@@ -143,6 +149,7 @@ export const addTextTopic = async (
 	const transaction = Keypair.generate();
 
 	const data = programs.namaph.coder.instruction.encode("update_text_topic", {
+		proposer,
 		title: topicTitle,
 		body
 	})
@@ -201,6 +208,7 @@ export const addUrlTopic = async (
 	})
 
 	const accounts = programs.namaph.instruction.updateUrlTopic.accounts({
+		proposer,
 		urlTopic,
 		authority: signer,
 	}) as ITransactionAccount[];
@@ -422,12 +430,17 @@ export const spend = async (
 		to
 	}) as ITransactionAccount[];
 
+	const [transactionMeta] = await PublicKey.findProgramAddress([
+		Buffer.from('transaction_meta').slice(0,32), transaction.publicKey.toBytes(),
+	],programs.namaph.programId);
+
 	await programs.namaph.rpc.createTransaction(programs.namaph.programId, accounts, data, {
 		accounts: {
 			membership: proposer,
 			multisig,
 			wallet: user, // this needs to be tied to the membership (proposer)
 			transaction: transaction.publicKey,
+			transactionMeta,
 			multisigProgram,
 			systemProgram: anchor.web3.SystemProgram.programId
 		},
@@ -470,6 +483,11 @@ export const changeThreshold = async (
 		multisigSigner: signer
 	}) as ITransactionAccount[];
 
+	const [transactionMeta] = await PublicKey.findProgramAddress([
+		Buffer.from('transaction_meta').slice(0,32), transaction.publicKey.toBytes(),
+	],programs.namaph.programId);
+
+
 	await programs.namaph.rpc.createTransaction(
 		programs.multisig.programId, accounts, data, {
 		accounts: {
@@ -477,6 +495,7 @@ export const changeThreshold = async (
 			multisig,
 			wallet: user,
 			transaction: transaction.publicKey,
+			transactionMeta,
 			multisigProgram,
 			systemProgram: anchor.web3.SystemProgram.programId,
 		}, signers,

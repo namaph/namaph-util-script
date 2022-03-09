@@ -10,9 +10,11 @@ import { BN, web3 } from '@project-serum/anchor';
 //
 // the data of the that account should be named as 'xxData' 
 
+const initOnly = true;
+
 const main = async () => {
 
-	const mapName = 'namaph-test';
+	const mapName = 'namaph-alpha';
 
 	const { user, programs } = setup(keypairJson);
 
@@ -41,153 +43,155 @@ const main = async () => {
 		programs.multisig.programId
 	);
 
-	console.log(signer.toBase58());
-
-	const mTx = {
-		proposer: membership,
-		multisig,
-		programs
-	};
-
-	const newUser = Keypair.generate();
-	const username = 'newuser';
-
-	console.log('addmember');
-
-	let { newMembership, transaction, accounts } = await addMember(
-		newUser.publicKey,
-		username,
-		signer,
-		mTx
-	);
-
-	await execute(
-		accounts,
-		multisig,
-		signer,
-		transaction.publicKey,
-		programs.multisig.programId,
-		programs.multisig
-	);
-
-	console.log('add text topic');
-
-	let textTopicResult = await addTextTopic(
-		'text topic', 
-		'body of text topic', 
-		signer, 
-		mTx);
-
-	({transaction, accounts} = textTopicResult)
-
-	await execute(
-		accounts,
-		multisig,
-		signer,
-		transaction.publicKey,
-		programs.namaph.programId,
-		programs.multisig
-	);
-
-	console.log('add url topic');
-
-	let urlTopicResult = await addUrlTopic(
-		'url topic', 
-		'https://namaph.dev', 
-		signer, 
-		mTx);
-
-	({transaction, accounts} = urlTopicResult)
-
-	await execute(
-		accounts,
-		multisig,
-		signer,
-		transaction.publicKey,
-		programs.namaph.programId,
-		programs.multisig
-	);
-
-	console.log('update topology');
-	({ transaction, accounts } = await updateTopology(
-		topology,
-		{ id: 2, value: 1 },
-		signer,
-		mTx
-	));
-
-	await execute(
-		accounts,
-		multisig,
-		signer,
-		transaction.publicKey,
-		programs.namaph.programId,
-		programs.multisig
-	);
-
-	console.log('change threshold');
-	({ transaction, accounts } = await changeThreshold(new BN(2), signer, mTx));
-
-	await execute(
-		accounts,
-		multisig,
-		signer,
-		transaction.publicKey,
-		programs.multisig.programId,
-		programs.multisig
-	);
-
-	console.log('change threshold (again)');
-	// the other owner proposes
-	//const newMtx = {
-	//	proposer: newMembership,
-	//	multisig,
-	//	programs
-	//};
-
-	({ transaction, accounts } = await changeThreshold(new BN(1), signer, mTx));
-
-	await approve(programs, multisig, transaction.publicKey, newMembership, newUser.publicKey, [newUser])
-
-	await execute(
-		accounts,
-		multisig,
-		signer,
-		transaction.publicKey,
-		programs.multisig.programId,
-		programs.multisig
-	);
-
+	console.log('create treasury');
 	const treasury = await createTreasury(
 		'megei',
 		multisig,
 		signer,
 		programs.namaph);
 
-	// send some SOL
-	let tx = new web3.Transaction().add(
-		web3.SystemProgram.transfer({
-			fromPubkey: programs.namaph.provider.wallet.publicKey,
-			toPubkey: treasury,
-			lamports: 1e9 * 10
-		})
-	);
+	if (!initOnly) {
 
-	tx.feePayer = programs.namaph.provider.wallet.publicKey;
+		const mTx = {
+			proposer: membership,
+			multisig,
+			programs
+		};
 
-	await programs.namaph.provider.send(tx);
+		const newUser = Keypair.generate();
+		const username = 'newuser';
 
-	console.log('spend');
-	({ transaction, accounts } = await spend(treasury, programs.namaph.provider.wallet.publicKey, new BN(1e9 * 5), signer, mTx));
+		console.log('addmember');
 
-	await execute(
-		accounts,
-		multisig,
-		signer,
-		transaction.publicKey,
-		programs.namaph.programId,
-		programs.multisig
-	);
+		let { newMembership, transaction, accounts } = await addMember(
+			newUser.publicKey,
+			username,
+			signer,
+			mTx
+		);
+
+		await execute(
+			accounts,
+			multisig,
+			signer,
+			transaction.publicKey,
+			programs.multisig.programId,
+			programs.multisig
+		);
+
+		console.log('add text topic');
+
+		let textTopicResult = await addTextTopic(
+			'text topic',
+			'body of text topic',
+			signer,
+			mTx);
+
+		({ transaction, accounts } = textTopicResult)
+
+		await execute(
+			accounts,
+			multisig,
+			signer,
+			transaction.publicKey,
+			programs.namaph.programId,
+			programs.multisig
+		);
+
+		console.log('add url topic');
+
+		let urlTopicResult = await addUrlTopic(
+			'url topic',
+			'https://namaph.dev',
+			signer,
+			mTx);
+
+		({ transaction, accounts } = urlTopicResult)
+
+		await execute(
+			accounts,
+			multisig,
+			signer,
+			transaction.publicKey,
+			programs.namaph.programId,
+			programs.multisig
+		);
+
+		console.log('update topology');
+		({ transaction, accounts } = await updateTopology(
+			topology,
+			{ id: 2, value: 1 },
+			signer,
+			mTx
+		));
+
+		await execute(
+			accounts,
+			multisig,
+			signer,
+			transaction.publicKey,
+			programs.namaph.programId,
+			programs.multisig
+		);
+
+		console.log('change threshold');
+		({ transaction, accounts } = await changeThreshold(new BN(2), signer, mTx));
+
+		await execute(
+			accounts,
+			multisig,
+			signer,
+			transaction.publicKey,
+			programs.multisig.programId,
+			programs.multisig
+		);
+
+		console.log('change threshold (again)');
+		// the other owner proposes
+		//const newMtx = {
+		//	proposer: newMembership,
+		//	multisig,
+		//	programs
+		//};
+
+		({ transaction, accounts } = await changeThreshold(new BN(1), signer, mTx));
+
+		await approve(programs, multisig, transaction.publicKey, newMembership, newUser.publicKey, [newUser])
+
+		await execute(
+			accounts,
+			multisig,
+			signer,
+			transaction.publicKey,
+			programs.multisig.programId,
+			programs.multisig
+		);
+
+		// send some SOL
+		let tx = new web3.Transaction().add(
+			web3.SystemProgram.transfer({
+				fromPubkey: programs.namaph.provider.wallet.publicKey,
+				toPubkey: treasury,
+				lamports: 1e9 * 10
+			})
+		);
+
+		tx.feePayer = programs.namaph.provider.wallet.publicKey;
+
+		await programs.namaph.provider.send(tx);
+
+		console.log('spend');
+		({ transaction, accounts } = await spend(treasury, programs.namaph.provider.wallet.publicKey, new BN(1e9 * 5), signer, mTx));
+
+		await execute(
+			accounts,
+			multisig,
+			signer,
+			transaction.publicKey,
+			programs.namaph.programId,
+			programs.multisig
+		);
+	}
 }
 
 main();
