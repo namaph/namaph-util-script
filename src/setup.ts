@@ -2,9 +2,7 @@ import { Provider, Wallet, Idl, Program } from '@project-serum/anchor';
 import { Keypair, Connection } from '@solana/web3.js';
 import nIdl from './idl/namaph_multisig.json';
 import mIdl from './idl/serum_multisig.json';
-
-// const url = 'https://api.devnet.solana.com';
-const url = 'http://127.0.0.1:8899';
+import { url } from './constants';
 
 export const setup = (keypairJson: number[]) => {
 

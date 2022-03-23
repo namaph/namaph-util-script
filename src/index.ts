@@ -4,6 +4,7 @@ import { fetchMembership, fetchMultisig, fetchTopology, ITopology } from './fetc
 import { addMember, changeThreshold, execute, init, createTreasury, updateTopology, spend, approve, addTextTopic, addUrlTopic } from './rpc';
 import { PublicKey, Keypair } from '@solana/web3.js';
 import { BN, web3 } from '@project-serum/anchor';
+import { mapName } from './constants';
 
 // basically we should hold the public key when we want to 
 // point to an account (ex: 'topology')
@@ -13,9 +14,6 @@ import { BN, web3 } from '@project-serum/anchor';
 const initOnly = true;
 
 const main = async () => {
-
-	const mapName = 'namaph-alpha';
-
 	const { user, programs } = setup(keypairJson);
 
 	let topology: PublicKey;

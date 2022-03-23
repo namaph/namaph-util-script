@@ -219,7 +219,7 @@
         },
         {
           "name": "wallet",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -230,11 +230,6 @@
         {
           "name": "transaction",
           "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "transactionMeta",
-          "isMut": true,
           "isSigner": false
         },
         {
@@ -619,26 +614,6 @@
           {
             "name": "authority",
             "type": "publicKey"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "TransactionMeta",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "proposer",
-            "type": "publicKey"
-          },
-          {
-            "name": "timestamp",
-            "type": "i64"
           },
           {
             "name": "bump",
